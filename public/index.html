@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>GeoMath — Generador de Ejercicios Matemáticos</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+
+  <!-- ESTILO NUEVO (no similar a ContaBot) -->
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+
+    body{
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #0f172a; /* azul oscuro */
+      color: #e2e8f0;
+      padding: 24px;
+      min-height:100vh;
+    }
+
+    /* Banner superior */
+    .banner{
+      width:100%;
+      padding:16px 22px;
+      background:#1e293b;
+      color:#f8fafc;
+      border-radius:12px;
+      box-shadow:0 0 25px rgba(0,0,0,0.35);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      position:sticky;
+      top:0;
+      z-index:100;
+    }
+    .banner span{
+      font-size:22px;
+      font-weight:700;
+      letter-spacing:1px;
+      color:#38bdf8; /* celeste */
+    }
+
+    .container{
+      margin:40px auto 0;
+      background:#1e293b;
+      padding:30px;
+      border-radius:16px;
+      max-width:900px;
+      box-shadow:0 0 30px rgba(0,0,0,0.3);
+    }
+
+    h1{
+      text-align:center;
+      margin-bottom:16px;
+      color:#38bdf8;
+      font-size:26px;
+      font-weight:700;
+    }
+
+    .controls{
+      display:grid;
+      gap:18px;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      margin-bottom:20px;
+    }
+
+    label{
+      font-size:14px;
+      margin-bottom:6px;
+      display:block;
+      color:#cbd5e1;
+    }
+
+    select,
+    input[type="number"],
+    input[type="range"]{
+      width:100%;
+      padding:11px;
+      border:1px solid #334155;
+      border-radius:10px;
+      font-size:15px;
+      background:#0f172a;
+      color:#e2e8f0;
+    }
+
+    .btn{
+      padding:12px;
+      border:none;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:700;
+      font-size:15px;
+      transition:0.15s;
+      margin-top:10px;
+    }
+
+    .btn.primary{
+      background:#38bdf8;
+      color:#0f172a;
+    }
+    .btn.primary:hover{
+      background:#7dd3fc;
+    }
+
+    .btn.secondary{
+      background:#0f172a;
+      color:#38bdf8;
+      border:1px solid #38bdf8;
+    }
+    .btn.secondary:hover{
+      background:#1e293b;
+    }
+
+    .controls-bottom{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-bottom:20px;
+    }
+
+    .exercise{
+      background:#0f172a;
+      padding:14px 18px;
+      border-radius:14px;
+      margin-bottom:14px;
+      border-left:6px solid #38bdf8;
+    }
+
+    .q{font-size:16px;color:#f1f5f9;}
+    .meta{font-size:12px;margin-top:4px;color:#94a3b8;}
+    .a{
+      margin-top:8px;
+      font-size:15px;
+      font-weight:600;
+      display:none;
+      color:#7dd3fc;
+    }
+
+    #statusText{
+      margin-left:auto;
+      font-size:13px;
+      color:#94a3b8;
+      align-self:center;
+    }
+
+  </style>
+</head>
+
+<body>
+
+  <div class="banner">
+    <span>GeoMath</span>
+  </div>
+
+  <div class="container">
+    <h1>Generador de ejercicios matemáticos</h1>
+
+    <div class="controls">
+      <div>
+        <label for="typeSelect">Tipo de ejercicio</label>
+        <select id="typeSelect">
+          <option value="aritmetica">Aritmética</option>
+          <option value="geometria">Geometría</option>
+          <option value="probabilidad">Probabilidad y Estadística</option>
+          <option value="secuencias">Secuencias y Progresiones</option>
+          <option value="algebra">Álgebra básica</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="difficulty">Dificultad (1-fácil → 5-difícil)</label>
+        <input id="difficulty" type="range" min="1" max="5" value="2">
+      </div>
+
+      <div>
+        <label for="count">Cantidad de ejercicios</label>
+        <input id="count" type="number" min="1" max="50" value="10">
+      </div>
+
+      <div style="display:flex;flex-direction:column;justify-content:end">
+        <button id="generate" class="btn">Generar ejercicios</button>
+      </div>
+    </div>
+
+    <div class="controls-bottom">
+      <button id="toggleAnswers" class="btn secondary">Mostrar respuestas</button>
+      <button id="copyBtn" class="btn secondary">Copiar como texto</button>
+      <button id="downloadTxt" class="btn secondary">Descargar .txt</button>
+      <div class="copy-note" id="statusText"></div>
+    </div>
+
+    <div id="board"></div> 
+
+    <section style="max-width:900px;margin:40px auto;color:#cbd5e1;line-height:1.65;background:#1e293b;padding:28px;border-radius:16px;">
+    <h2 style="color:#38bdf8;margin-bottom:14px;font-size:22px;">¿Qué es GeoMath?</h2>
+    <p>
+      GeoMath es una herramienta creada para estudiantes, docentes y cualquier persona que necesite practicar matemáticas de forma práctica, inmediata y totalmente gratuita. 
+      Está diseñada para generar ejercicios aleatorios en áreas fundamentales como aritmética, geometría, probabilidad, secuencias y álgebra, adaptándose tanto a principiantes 
+      como a quienes buscan retos más avanzados. La plataforma combina generación dinámica de problemas con explicaciones claras, facilitando el aprendizaje independiente y 
+      permitiendo crear hojas de trabajo personalizadas en segundos.
+    </p>
+
+    <h2 style="color:#38bdf8;margin:20px 0 14px;">¿Cómo funciona este generador de ejercicios matemáticos?</h2>
+    <p>
+      GeoMath utiliza un sistema que crea problemas nuevos cada vez que el usuario los solicita. No se trata de una lista estática ni de ejercicios repetidos: cada pregunta 
+      se forma a partir de parámetros aleatorios que respetan reglas matemáticas reales, lo que garantiza variedad y un entrenamiento efectivo. El usuario solo debe elegir 
+      el tipo de ejercicio, la dificultad deseada y la cantidad de preguntas; la plataforma se encarga del resto. Además, permite mostrar u ocultar las respuestas, copiar 
+      los ejercicios para compartirlos o descargarlos en un archivo de texto.
+    </p>
+
+    <h2 style="color:#38bdf8;margin:20px 0 14px;">Tipos de ejercicios disponibles</h2>
+    <p>
+      GeoMath cubre diferentes áreas esenciales de las matemáticas. En aritmética, se generan operaciones con números enteros y decimales, empleando sumas, restas, 
+      multiplicaciones, divisiones y expresiones con paréntesis. En geometría, el sistema crea problemas sobre áreas, perímetros y volúmenes, incluyendo figuras básicas 
+      y sólidos más avanzados conforme aumenta la dificultad. Para probabilidad y estadística, se incluyen ejercicios de eventos simples, urnas, medias, medianas, varianza y 
+      experimentos binomiales. Las secuencias abarcan progresiones aritméticas y geométricas, así como sumas de términos. Finalmente, en álgebra se trabajan ecuaciones 
+      lineales, sistemas y ecuaciones cuadráticas generadas de manera realista.
+    </p>
+
+    <h2 style="color:#38bdf8;margin:20px 0 14px;">¿Para quién está pensado GeoMath?</h2>
+    <p>
+      El generador es útil para estudiantes de primaria, secundaria y bachillerato que deseen reforzar su práctica diaria, pero también funciona bien para profesores 
+      que buscan ejercicios rápidos para clases, tutorías o evaluaciones. Su versatilidad permite que cualquier usuario genere problemas adaptados a su nivel, lo cual 
+      resulta especialmente útil en educación a distancia, clases virtuales y estudio independiente.
+    </p>
+
+    <h2 style="color:#38bdf8;margin:20px 0 14px;">Ventajas de usar GeoMath</h2>
+    <p>
+      Además de su facilidad de uso, GeoMath ofrece la posibilidad de crear ejercicios infinitos sin repetir exactamente los mismos valores. Esto fomenta una práctica 
+      auténtica, evitando la memorización mecánica y estimulando el pensamiento lógico. El diseño ligero de la página permite que cargue rápido incluso en dispositivos 
+      móviles, mientras que la generación instantánea de contenido evita la necesidad de registrarse o instalar software adicional. GeoMath nació con la intención de ser 
+      una herramienta abierta y accesible para todos los interesados en mejorar su comprensión de las matemáticas.
+    </p>
+
+    <h2 style="color:#38bdf8;margin:20px 0 14px;">Objetivo educativo</h2>
+    <p>
+      El propósito principal de GeoMath es facilitar el aprendizaje activo mediante la resolución de ejercicios variados y significativos. Con cada nueva generación 
+      de problemas, el usuario puede reforzar su razonamiento matemático, aumentar su velocidad de cálculo, comprender conceptos teóricos a través de ejemplos prácticos 
+      y construir confianza en su habilidad para resolver operaciones y problemas reales. GeoMath busca ser un recurso útil para el estudio diario y una herramienta 
+      complementaria que mejore el proceso educativo.
+    </p>
+  </section>
+
+  </div>
+
+<script>
+  // Helpers
+  const randInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+  const pick = arr => arr[randInt(0, arr.length-1)];
+  const formatNumber = n => (Number.isInteger(n) ? n.toString() : Number(n.toFixed(4)).toString());
+
+  // Generadores por tipo y dificultad
+  function genAritmetica(d) {
+    // d: 1..5 increases complexity: ops count, magnitude, include decimals, parentheses
+    const opsByDifficulty = {1:1,2:2,3:2,4:3,5:4};
+    const opsCount = opsByDifficulty[d];
+    const maxBase = [10,20,50,200,1000][d-1];
+    const allowDecimals = d >= 4;
+    let nums = Array.from({length: opsCount+1}, () => {
+      let n = randInt(1, maxBase);
+      if (allowDecimals && Math.random()<0.4) n = +(n/ (randInt(1,5))).toFixed(2);
+      return n;
+    });
+    const opsPool = ["+","-","*","/"];
+    // higher difficulty: more * and / probability
+    const ops = [];
+    for (let i=0;i<opsCount;i++){
+      const p = Math.random();
+      if (p < 0.35 - d*0.03) ops.push("+");
+      else if (p < 0.6) ops.push("-");
+      else if (p < 0.85) ops.push("*");
+      else ops.push("/");
+    }
+    // Build expression, maybe add parentheses for d>=3
+    let expr = ""+nums[0];
+    for (let i=0;i<ops.length;i++){
+      expr += ` ${ops[i]} ${nums[i+1]}`;
+    }
+    if (d>=3 && Math.random()<0.6){
+      // insert parentheses around random subexpression
+      const parts = expr.split(" ");
+      const lenParts = parts.length;
+      const i = randInt(0, Math.max(0, Math.floor((lenParts-1)/2)-1))*2; // index of number
+      if (i+4 < lenParts){
+        parts[i] = "(" + parts[i];
+        parts[i+4] = parts[i+4] + ")";
+        expr = parts.join(" ");
+      }
+    }
+    // compute answer safely
+    let answer;
+    try { answer = eval(expr); } catch(e){ answer = null; }
+    if (typeof answer === 'number' && !Number.isInteger(answer)) answer = +answer.toFixed(4);
+    return {q:`Calcula: ${expr}`, a:`${formatNumber(answer)}`};
+  }
+
+  function genGeometria(d) {
+    // types: area/perimeter (2D), volume (3D) for higher d, shapes complexity
+    const simpleShapes = ["cuadrado","rectángulo","círculo","triángulo"];
+    const complexShapes = ["trapecio","paralelogramo","rombo"];
+    const solids = ["cilindro","cubo","esfera","cono"];
+    if (d<=2) {
+      const shape = pick(simpleShapes);
+      if (shape==="cuadrado"){
+        const lado = randInt(2, 10*(d));
+        return {q:`Calcula el área y el perímetro de un cuadrado de lado ${lado} cm.`, a:`Área = ${lado*lado} cm². Perímetro = ${4*lado} cm.`};
+      }
+      if (shape==="rectángulo"){
+        const a = randInt(2, 10*d), b = randInt(2, 10*d);
+        return {q:`Calcula el área y el perímetro de un rectángulo de lados ${a} cm y ${b} cm.`, a:`Área = ${a*b} cm². Perímetro = ${2*(a+b)} cm.`};
+      }
+      if (shape==="círculo"){
+        const r = randInt(1, 5*d);
+        const area = +(Math.PI * r * r).toFixed(3), perim = +(2*Math.PI*r).toFixed(3);
+        return {q:`Calcula el área y la circunferencia de un círculo de radio ${r} cm (usa π≈${Math.PI.toFixed(6)}).`, a:`Área ≈ ${area} cm². Circunferencia ≈ ${perim} cm.`};
+      }
+      if (shape==="triángulo"){
+        const b = randInt(3, 8*d), h = randInt(3, 8*d);
+        return {q:`Calcula el área de un triángulo con base ${b} cm y altura ${h} cm.`, a:`Área = ${(b*h/2).toFixed(3)} cm²`};
+      }
+    } else if (d<=4) {
+      const shape = pick([...simpleShapes,...complexShapes]);
+      if (shape==="trapecio"){
+        const B = randInt(6, 10*d), b = randInt(2, 6*d), h = randInt(2, 6*d);
+        return {q:`Área de un trapecio con bases ${B} cm y ${b} cm, altura ${h} cm.`, a:`Área = ${((B+b)/2*h).toFixed(3)} cm²`};
+      }
+      if (shape==="paralelogramo"){
+        const b = randInt(3,8*d), h = randInt(3,8*d);
+        return {q:`Área de un paralelogramo con base ${b} cm y altura ${h} cm.`, a:`Área = ${(b*h).toFixed(3)} cm²`};
+      }
+      if (shape==="rombo"){
+        const d1 = randInt(2,8*d), d2 = randInt(2,8*d);
+        return {q:`Área de un rombo con diagonales ${d1} cm y ${d2} cm.`, a:`Área = ${(d1*d2/2).toFixed(3)} cm²`};
+      }
+      // fallback
+      return genGeometria(2);
+    } else {
+      // solids
+      const s = pick(solids);
+      if (s==="cilindro"){
+        const r = randInt(2,6*d), h = randInt(2,8*d);
+        return {q:`Calcula el volumen de un cilindro de radio ${r} cm y altura ${h} cm (V=πr²h).`, a:`V ≈ ${(Math.PI*r*r*h).toFixed(3)} cm³`};
+      }
+      if (s==="cubo"){
+        const a = randInt(2,6*d);
+        return {q:`Volumen de un cubo de arista ${a} cm.`, a:`V = ${a*a*a} cm³`};
+      }
+      if (s==="esfera"){
+        const r = randInt(2,6*d);
+        return {q:`Volumen de una esfera de radio ${r} cm (V = 4/3·π·r³).`, a:`V ≈ ${(4/3*Math.PI*r*r*r).toFixed(3)} cm³`};
+      }
+      if (s==="cono"){
+        const r = randInt(2,6*d), h = randInt(2,8*d);
+        return {q:`Volumen de un cono de radio ${r} cm y altura ${h} cm (V = 1/3·π·r²·h).`, a:`V ≈ ${(Math.PI*r*r*h/3).toFixed(3)} cm³`};
+      }
+    }
+  }
+
+  function genProbabilidad(d) {
+
+    // ---------------------------
+    // NIVEL 1 — Probabilidad básica
+    // ---------------------------
+    if (d === 1) {
+      const tipo = randInt(1, 2);
+
+      // EVENTO A — dado de N caras
+      if (tipo === 1) {
+        const sides = randInt(4, 12);
+        const event = randInt(1, sides);
+        const prob = (1 / sides).toFixed(3);
+        return {
+          q: `Se lanza un dado de ${sides} caras. ¿Cuál es la probabilidad de obtener ${event}?`,
+          a: `1/${sides} ≈ ${prob}`
+        };
+      }
+
+      // EVENTO B — mini-baraja con número variable de cartas
+      else {
+        const total = randInt(5, 20);      // ahora el total cambia entre 6 y 15
+        const card = randInt(1, total);    // evento también cambia
+        const prob = (1 / total).toFixed(3);
+
+        return {
+          q: `En una baraja con cartas numeradas del 1 al ${total}, se saca una carta al azar. ¿Cuál es la probabilidad de obtener el número ${card}?`,
+          a: `1/${total} ≈ ${prob}`
+        };
+      }
+    }
+
+    // ---------------------------
+    // NIVEL 2 — Urnas y contexto simple
+    // ---------------------------
+    if (d === 2) {
+      const tipo = randInt(1, 2);
+
+      // EVENTO A — Bolas rojas
+      if (tipo === 1) {
+        const n = randInt(10, 30);
+        const favorable = randInt(1, Math.min(8, n - 1));
+        return {
+          q: `De ${n} bolas en una urna, ${favorable} son rojas. Si se saca una bola al azar, ¿cuál es la probabilidad de sacar una roja?`,
+          a: `${favorable}/${n} ≈ ${(favorable / n).toFixed(3)}`
+        };
+      }
+
+      // EVENTO B — Pregunta de un examen
+      else {
+        const totalQ = randInt(12, 30);
+        const favorable = randInt(3, Math.min(10, totalQ - 1));
+        return {
+          q: `Un examen contiene ${totalQ} preguntas, de las cuales ${favorable} son de geometría. Si se elige una pregunta al azar, ¿cuál es la probabilidad de que sea de geometría?`,
+          a: `${favorable}/${totalQ} ≈ ${(favorable / totalQ).toFixed(3)}`
+        };
+      }
+    }
+
+    // ---------------------------
+    // NIVEL 3 — Media / Mediana / Moda
+    // ---------------------------
+    if (d === 3) {
+      const arr = Array.from({ length: 5 }, () => randInt(1, 12));
+      const mean = (arr.reduce((s, x) => s + x, 0) / arr.length).toFixed(3);
+      const sorted = [...arr].sort((a, b) => a - b);
+      const median = sorted[2];
+      return {
+        q: `Dada la muestra: [${arr.join(", ")}], calcula la media y la mediana.`,
+        a: `Media = ${mean}. Mediana = ${median}.`
+      };
+    }
+
+    // ---------------------------
+    // NIVEL 4 — Binomial
+    // ---------------------------
+    if (d === 4) {
+      const n = randInt(5, 10),
+            p = +(Math.random() * 0.6 + 0.2).toFixed(2),
+            k = randInt(0, n);
+
+      function comb(n, k) {
+        if (k < 0 || k > n) return 0;
+        let r = 1;
+        for (let i = 1; i <= k; i++) {
+          r *= (n - (k - i));
+          r /= i;
+        }
+        return r;
+      }
+
+      const prob = comb(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k);
+
+      return {
+        q: `En un experimento binomial con n=${n} y p=${p}, ¿cuál es la probabilidad de obtener exactamente k=${k} éxitos?`,
+        a: `P = ${prob.toFixed(4)}`
+      };
+    }
+
+    // ---------------------------
+    // NIVEL 5 — Media & Varianza
+    // ---------------------------
+    if (d === 5) {
+      const arr = Array.from({ length: 7 }, () => randInt(1, 20));
+      const mean = arr.reduce((s, x) => s + x, 0) / arr.length;
+      const variance = arr.reduce((s, x) => s + Math.pow(x - mean, 2), 0) / arr.length;
+
+      return {
+        q: `Para la muestra [${arr.join(", ")}], calcula la media y la varianza (poblacional).`,
+        a: `Media ≈ ${mean.toFixed(3)}. Varianza ≈ ${variance.toFixed(3)}.`
+      };
+    }
+  }
+
+
+  function genSecuencias(d) {
+    // arithmetic/geometric sequences, find next term or sum
+    if (d<=2){
+      const a1 = randInt(1,8), dstep = randInt(1,6);
+      const terms = [a1, a1+dstep, a1+2*dstep];
+      return {q:`Encuentra el siguiente término de la secuencia aritmética: ${terms.join(", ")} , ...`, a:`Siguiente = ${a1+3*dstep}`};
+    }
+    if (d===3){
+      const a1 = randInt(1,5), r = randInt(2,4);
+      const terms = [a1, a1*r, a1*r*r];
+      return {q:`Secuencia geométrica: ${terms.join(", ")}, ... . Encuentra el siguiente término.`, a:`Siguiente = ${a1*Math.pow(r,3)}`};
+    }
+    if (d>=4){
+      const a1 = randInt(1,6), r = randInt(2,5);
+      const n = randInt(4,7);
+      const sum = a1 * (1 - Math.pow(r, n)) / (1 - r);
+      return {q:`Suma de los primeros ${n} términos de la progresión geométrica con primer término ${a1} y razón ${r}.`, a:`Suma ≈ ${sum.toFixed(3)}`};
+    }
+  }
+
+  function genAlgebra(d) {
+    // linear equations, systems simple for high d maybe quadratic roots
+    if (d<=2){
+      // ax + b = c
+      const a = randInt(1,6), b = randInt(0,10), x = randInt(-5,10);
+      const c = a*x + b;
+      return {q:`Resuelve para x: ${a}x + ${b} = ${c}`, a:`x = ${x}`};
+    }
+    if (d===3){
+      // system 2x2
+      const a=randInt(1,6), b=randInt(1,6), c=randInt(1,10), d=randInt(1,6);
+      const x = randInt(0,6), y = randInt(0,6);
+      const e = a*x + b*y, f = c*x + d*y;
+      // Solve: aX + bY = e ; cX + dY = f -> will return x,y known
+      return {q:`Resuelve el sistema:\n${a}x + ${b}y = ${e}\n${c}x + ${d}y = ${f}`, a:`x = ${x}, y = ${y}`};
+    }
+    if (d>=4){
+      // quadratic
+      const r1 = randInt(-5,5), r2 = randInt(-5,5);
+      const a = 1;
+      const b = -(r1 + r2), c = r1*r2;
+      return {q:`Encuentra las raíces de la ecuación: x² ${b>=0?'+':'-'} ${Math.abs(b)}x ${c>=0?'+':'-'} ${Math.abs(c)} = 0`, a:`Raíces: ${r1}, ${r2}`};
+    }
+  }
+
+  // Dispatcher
+  function generateOne(type, difficulty) {
+    switch(type) {
+      case "aritmetica": return genAritmetica(difficulty);
+      case "geometria": return genGeometria(difficulty);
+      case "probabilidad": return genProbabilidad(difficulty);
+      case "secuencias": return genSecuencias(difficulty);
+      case "algebra": return genAlgebra(difficulty);
+      default: return {q:"Ejercicio no disponible", a:"-"};
+    }
+  }
+
+  // UI logic
+  const board = document.getElementById("board");
+  const generateBtn = document.getElementById("generate");
+  const toggleAnswersBtn = document.getElementById("toggleAnswers");
+  const copyBtn = document.getElementById("copyBtn");
+  const downloadTxt = document.getElementById("downloadTxt");
+  const statusText = document.getElementById("statusText");
+
+  let lastExercises = [];
+
+  generateBtn.addEventListener("click", () => {
+    const type = document.getElementById("typeSelect").value;
+    const diff = parseInt(document.getElementById("difficulty").value);
+    const count = Math.min(50, Math.max(1, parseInt(document.getElementById("count").value || 10)));
+    board.innerHTML = "";
+    lastExercises = [];
+    for (let i=0;i<count;i++){
+      const ex = generateOne(type, diff);
+      lastExercises.push(ex);
+      const div = document.createElement("div");
+      div.className = "exercise";
+      const q = document.createElement("div");
+      q.className = "q";
+      q.textContent = `${i+1}. ${ex.q}`;
+      const meta = document.createElement("div");
+      meta.className = "meta";
+      meta.textContent = `Tipo: ${type} · Dificultad: ${diff}`;
+      const a = document.createElement("div");
+      a.className = "a";
+      a.textContent = `Respuesta: ${ex.a}`;
+      div.appendChild(q);
+      div.appendChild(meta);
+      div.appendChild(a);
+      board.appendChild(div);
+    }
+    // hide answers by default
+    document.querySelectorAll(".a").forEach(el => el.style.display = "none");
+    toggleAnswersBtn.textContent = "Mostrar respuestas";
+    statusText.textContent = `Generados ${count} ejercicios (${type}, dificultad ${diff})`;
+  });
+
+  toggleAnswersBtn.addEventListener("click", () => {
+    const visibles = Array.from(document.querySelectorAll(".a")).filter(x=>x.style.display!=="none");
+    if (visibles.length>0){
+      // hide
+      document.querySelectorAll(".a").forEach(el => el.style.display = "none");
+      toggleAnswersBtn.textContent = "Mostrar respuestas";
+    } else {
+      document.querySelectorAll(".a").forEach(el => el.style.display = "block");
+      toggleAnswersBtn.textContent = "Ocultar respuestas";
+    }
+  });
+
+  copyBtn.addEventListener("click", async () => {
+    if (!lastExercises.length) return showStatus("No hay ejercicios para copiar");
+    let text = `Ejercicios generados — ${new Date().toLocaleString()}\n\n`;
+    lastExercises.forEach((ex,i)=> text += `${i+1}. ${ex.q}\n   Respuesta: ${ex.a}\n\n`);
+    await navigator.clipboard.writeText(text);
+    showStatus("Copiado al portapapeles ✔");
+  });
+
+  downloadTxt.addEventListener("click", () => {
+    if (!lastExercises.length) return showStatus("No hay ejercicios para descargar");
+    let text = `Ejercicios generados — ${new Date().toLocaleString()}\n\n`;
+    lastExercises.forEach((ex,i)=> text += `${i+1}. ${ex.q}\nRespuesta: ${ex.a}\n\n`);
+    const blob = new Blob([text],{type:"text/plain;charset=utf-8"});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "ejercicios.txt";
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+    showStatus("Descarga iniciada ✔");
+  });
+
+  function showStatus(msg){
+    statusText.textContent = msg;
+    setTimeout(()=>{ if(statusText.textContent===msg) statusText.textContent = ""; },3000);
+  }
+
+  // generate sample on load
+  window.addEventListener("load", ()=> generateBtn.click());
+</script>
+</body>
+</html>
